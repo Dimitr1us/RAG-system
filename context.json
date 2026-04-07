@@ -1,0 +1,22 @@
+[
+    {
+        "task": "Найти сумму элементов массива",
+        "solution": "def solve(arr): return sum(arr)"
+    },
+    {
+        "task": "Найти максимальный элемент в массиве",
+        "solution": "def solve(arr): return max(arr)"
+    },
+    {
+        "task": "Посчитать количество чётных чисел в массиве",
+        "solution": "def solve(arr): return sum(1 for x in arr if x % 2 == 0)"
+    },
+    {
+        "task": "Развернуть строку",
+        "solution": "def solve(s): return s[::-1]"
+    },
+    {
+        "task": "Проверить, является ли строка палиндромом",
+        "solution": "def solve(s): return s == s[::-1]"
+    }
+]
