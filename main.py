@@ -13,13 +13,21 @@ with open("context.json", "r", encoding="utf-8") as f:
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
+def clean_code(code):
+    code = code.replace("```","")
+    code = code.replace("python","")
+    code = code.strip()
+    return code
+
 #делает запрос
 def askModel(something):
     response = client.models.generate_content(
         model = "gemini-3-flash-preview",
         contents = something
     )
-    return response.candidates[0].content.parts[0].text
+    answer = response.candidates[0].content.parts[0].text
+    answer = clean_code(answer)
+    return answer
 
 #делает запрос
 def getEmbedding(something):
