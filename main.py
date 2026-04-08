@@ -13,6 +13,7 @@ with open("context.json", "r", encoding="utf-8") as f:
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
+#делает запрос
 def askModel(something):
     response = client.models.generate_content(
         model = "gemini-3-flash-preview",
@@ -20,6 +21,7 @@ def askModel(something):
     )
     return response.candidates[0].content.parts[0].text
 
+#делает запрос
 def getEmbedding(something):
     context = client.models.embed_content(
         model="gemini-embedding-001",
@@ -33,10 +35,11 @@ def bestContext(prompt):
     bestSolution = data[0]["solution"]
     bestVector = getEmbedding(bestTask)
     for item in data:
-        if (cosine_similarity(vectorPrompt,getEmbedding(item["task"]))>cosine_similarity(vectorPrompt,bestVector)):
+        currentTaskVector = getEmbedding(item["task"])
+        if (cosine_similarity(vectorPrompt,currentTaskVector)>cosine_similarity(vectorPrompt,bestVector)):
             bestTask = item["task"]
             bestSolution = item["solution"]
-            bestVector = getEmbedding(item["task"])
+            bestVector = currentTaskVector
     return (bestTask,bestSolution, bestVector)
 
 task = "Напиши функцию, которая ищет максимальный"
