@@ -2,7 +2,7 @@ from google import genai
 import numpy as np
 import json
 import os
-import Task
+from Task import Task
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -49,29 +49,19 @@ def bestContext(prompt,k=3):
     scored.sort(key=lambda x: x[0], reverse=True)
     return [item for _, item in scored[:k]]
 
-task = "Напиши функцию, которая ищет максимальный элемент массива. Назови получившуюся функцию solve"
-
-context = bestContext(task,2)
-
-text=""
-for item in context:
-    text=text+item['task']+"\n"+item['solution']+"\n"
-
-prompt_with_rag = f"""
-Реши задачу на питоне: {task}
-Для лучшего решения задания учти во внимание также данный код:
-{text}
-Назад отправь только код самой задачи.
-Если решение полностью совпадает с контекстом, то всё равно отправь код назад.
-"""
-
-prompt_without_rag = f"""
-Реши задачу на питоне: {task}
-Назад отправь только код самой задачи.
-"""
-
-
 def main():
+    max = Task("Напиши функцию, которая ищет максимальный элемент массива. Назови получившуюся функцию solve",[1,2,3])
+    context = bestContext(max.Description(), 2)
+
+    text=""
+    for item in context:
+        text=text+item['task']+"\n"+item['solution']+"\n"
+
+    prompt_without_rag = max.Prompt()
+    prompt_with_rag = prompt_without_rag + text + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
+
+    print(prompt_without_rag)
+
     answer = askModel(prompt_with_rag)
 
     with open("solution_with_rag.py","w",encoding="utf-8") as f:

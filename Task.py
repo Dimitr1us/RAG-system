@@ -3,8 +3,12 @@ class Task:
         self.description = description
         self.tests = tests
 
-    def description(self):
+    def Description(self):
         return self.description
     
-    def tests(self):
+    def Tests(self):
         return self.tests 
+    
+    def Prompt(self):
+        text =  f"""Реши задачу на питоне: {self.description}.\n Назад отправь только код самой задачи."""
+        return text
