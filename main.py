@@ -2,6 +2,7 @@ from google import genai
 import numpy as np
 import json
 import os
+import Task
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -63,7 +64,6 @@ prompt_with_rag = f"""
 Назад отправь только код самой задачи.
 Если решение полностью совпадает с контекстом, то всё равно отправь код назад.
 """
-
 
 prompt_without_rag = f"""
 Реши задачу на питоне: {task}
