@@ -37,42 +37,50 @@ def getEmbedding(something):
     )
     return context.embeddings[0].values
 
-def bestContext(prompt):
+#делает запрос
+def bestContext(prompt,k=3):
     vectorPrompt = getEmbedding(prompt)
-    bestTask = data[0]["task"]
-    bestSolution = data[0]["solution"]
-    bestVector = getEmbedding(bestTask)
+    scored = []
     for item in data:
-        currentTaskVector = getEmbedding(item["task"])
-        if (cosine_similarity(vectorPrompt,currentTaskVector)>cosine_similarity(vectorPrompt,bestVector)):
-            bestTask = item["task"]
-            bestSolution = item["solution"]
-            bestVector = currentTaskVector
-    return (bestTask,bestSolution, bestVector)
+        score = cosine_similarity(vectorPrompt, getEmbedding(item["task"]))
+        scored.append((score, item))
 
-task = "Напиши функцию, которая ищет максимальный"
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [item for _, item in scored[:k]]
 
-context = bestContext(task)
+task = "Напиши функцию, которая ищет максимальный элемент массива. Назови получившуюся функцию solve"
+
+context = bestContext(task,2)
+
+text=""
+for item in context:
+    text=text+item['task']+"\n"+item['solution']+"\n"
 
 prompt_with_rag = f"""
 Реши задачу на питоне: {task}
 Для лучшего решения задания учти во внимание также данный код:
-{context[1]}
+{text}
 Назад отправь только код самой задачи.
 Если решение полностью совпадает с контекстом, то всё равно отправь код назад.
 """
+
 
 prompt_without_rag = f"""
 Реши задачу на питоне: {task}
 Назад отправь только код самой задачи.
 """
 
-answer = askModel(prompt_with_rag)
 
-with open("solution_with_rag.py","w",encoding="utf-8") as f:
-    f.write(answer)
+def main():
+    answer = askModel(prompt_with_rag)
 
-answer = askModel(prompt_without_rag)
+    with open("solution_with_rag.py","w",encoding="utf-8") as f:
+        f.write(answer)
 
-with open("solution_without_rag.py","w",encoding="utf-8") as f:
-    f.write(answer)
+    answer = askModel(prompt_without_rag)
+
+    with open("solution_without_rag.py","w",encoding="utf-8") as f:
+        f.write(answer)
+
+if (__name__=="__main__"):
+    main()
