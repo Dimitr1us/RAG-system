@@ -50,7 +50,7 @@ def bestContext(prompt,k=3):
     return [item for _, item in scored[:k]]
 
 def main():
-    max = Task("Напиши функцию, которая ищет максимальный элемент массива. Назови получившуюся функцию solve",[1,2,3])
+    max = Task("Напиши функцию, которая ищет максимальный элемент массива. Назови получившуюся функцию solve",[1,2,3],3)
     context = bestContext(max.Description(), 2)
 
     text=""
