@@ -20,7 +20,7 @@ def clean_code(code):
     code = code.strip()
     return code
 
-def run_solution(file_path,test_input, name_function):
+def run_solution(file_path,test_input,answer_input, name_function):
     with open(file_path, "r", encoding="utf-8") as f:
         code = f.read()
 
@@ -32,7 +32,12 @@ def run_solution(file_path,test_input, name_function):
     if not solve:
         raise Exception(f"""Function {name_function} not found.""")
     
-    return solve(test_input)
+    k=0
+    for i in range(len(test_input)):
+        answer = solve(test_input[i])
+        k += (answer==answer_input[i])
+    
+    return k/len(answer_input)
 
 #делает запрос
 def askModel(something):
@@ -64,7 +69,7 @@ def bestContext(prompt,k=3):
     return [item for _, item in scored[:k]]
 
 def main():
-    max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[1,2,3],3)
+    max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])
     # context = bestContext(max.Description(), 2)
 
     # text=""
@@ -86,8 +91,8 @@ def main():
     # with open("solution_without_rag.py","w",encoding="utf-8") as f:
     #     f.write(answer)
 
-    print(run_solution("solution_without_rag.py",max.Tests(),max.function_name))
-    print(run_solution("solution_with_rag.py",max.Tests(),max.function_name))
+    print(run_solution("solution_without_rag.py",max.Tests(),max.Answer(),max.function_name))
+    print(run_solution("solution_with_rag.py",max.Tests(),max.Answer(),max.function_name))
 
 
 if (__name__=="__main__"):
