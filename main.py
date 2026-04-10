@@ -75,16 +75,16 @@ def bestContext(prompt,k=3):
 
 def main():
     max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])
-    context = bestContext(max.Description(), 2)
+    context = bestContext(max.Description(), 3)
 
-    # text=""
-    # for item in context:
-    #     text=text+item['task']+"\n"+item['solution']+"\n"
+    text=""
+    for item in context:
+        text=text+item['task']+"\n"+item['solution']+"\n"
 
-    # prompt_without_rag = max.Prompt()
-    # prompt_with_rag = prompt_without_rag + text + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
+    prompt_without_rag = max.Prompt()
+    prompt_with_rag = prompt_without_rag + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
 
-    # print(prompt_without_rag)
+    print(prompt_with_rag)
 
     # answer = askModel(prompt_with_rag)
 
@@ -96,8 +96,8 @@ def main():
     # with open("solution_without_rag.py","w",encoding="utf-8") as f:
     #     f.write(answer)
 
-    print(run_solution("solution_without_rag.py",max.Tests(),max.Answer(),max.function_name))
-    print(run_solution("solution_with_rag.py",max.Tests(),max.Answer(),max.function_name))
+    #print(run_solution("solution_without_rag.py",max.Tests(),max.Answer(),max.function_name))
+    #print(run_solution("solution_with_rag.py",max.Tests(),max.Answer(),max.function_name))
 
 
 if (__name__=="__main__"):
