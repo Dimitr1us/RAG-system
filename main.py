@@ -62,15 +62,20 @@ def bestContext(prompt,k=3):
     vectorPrompt = getEmbedding(prompt)
     scored = []
     for item in data:
-        score = cosine_similarity(vectorPrompt, getEmbedding(item["task"]))
+        if "embedding" not in item:
+            item["embedding"] = getEmbedding(item["task"])
+        score = cosine_similarity(vectorPrompt, item["embedding"])
         scored.append((score, item))
-
     scored.sort(key=lambda x: x[0], reverse=True)
+
+    with open("context.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii= False,indent = 4)
+
     return [item for _, item in scored[:k]]
 
 def main():
     max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])
-    # context = bestContext(max.Description(), 2)
+    context = bestContext(max.Description(), 2)
 
     # text=""
     # for item in context:
