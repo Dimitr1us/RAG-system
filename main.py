@@ -64,7 +64,7 @@ def bestContext(prompt,k=3):
     return [item for _, item in scored[:k]]
 
 def main():
-    max = Task("Напиши функцию, которая ищет максимальный элемент массива. Назови получившуюся функцию solve",[1,2,3],3)
+    max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[1,2,3],3)
     # context = bestContext(max.Description(), 2)
 
     # text=""
@@ -86,8 +86,8 @@ def main():
     # with open("solution_without_rag.py","w",encoding="utf-8") as f:
     #     f.write(answer)
 
-    print(run_solution("solution_without_rag.py",max.Tests(),'solve'))
-    print(run_solution("solution_with_rag.py",max.Tests(),'solve'))
+    print(run_solution("solution_without_rag.py",max.Tests(),max.function_name))
+    print(run_solution("solution_with_rag.py",max.Tests(),max.function_name))
 
 
 if (__name__=="__main__"):
