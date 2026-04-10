@@ -20,6 +20,20 @@ def clean_code(code):
     code = code.strip()
     return code
 
+def run_solution(file_path,test_input, name_function):
+    with open(file_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    local_env = {}
+    exec(code,{},local_env)
+
+    solve = local_env.get(name_function)
+
+    if not solve:
+        raise Exception(f"""Function {name_function} not found.""")
+    
+    return solve(test_input)
+
 #делает запрос
 def askModel(something):
     response = client.models.generate_content(
@@ -51,26 +65,30 @@ def bestContext(prompt,k=3):
 
 def main():
     max = Task("Напиши функцию, которая ищет максимальный элемент массива. Назови получившуюся функцию solve",[1,2,3],3)
-    context = bestContext(max.Description(), 2)
+    # context = bestContext(max.Description(), 2)
 
-    text=""
-    for item in context:
-        text=text+item['task']+"\n"+item['solution']+"\n"
+    # text=""
+    # for item in context:
+    #     text=text+item['task']+"\n"+item['solution']+"\n"
 
-    prompt_without_rag = max.Prompt()
-    prompt_with_rag = prompt_without_rag + text + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
+    # prompt_without_rag = max.Prompt()
+    # prompt_with_rag = prompt_without_rag + text + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
 
-    print(prompt_without_rag)
+    # print(prompt_without_rag)
 
-    answer = askModel(prompt_with_rag)
+    # answer = askModel(prompt_with_rag)
 
-    with open("solution_with_rag.py","w",encoding="utf-8") as f:
-        f.write(answer)
+    # with open("solution_with_rag.py","w",encoding="utf-8") as f:
+    #     f.write(answer)
 
-    answer = askModel(prompt_without_rag)
+    # answer = askModel(prompt_without_rag)
 
-    with open("solution_without_rag.py","w",encoding="utf-8") as f:
-        f.write(answer)
+    # with open("solution_without_rag.py","w",encoding="utf-8") as f:
+    #     f.write(answer)
+
+    print(run_solution("solution_without_rag.py",max.Tests(),'solve'))
+    print(run_solution("solution_with_rag.py",max.Tests(),'solve'))
+
 
 if (__name__=="__main__"):
     main()
