@@ -12,6 +12,8 @@ with open("context.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
 def cosine_similarity(a, b):
+    if (np.linalg.norm(a)==0 or np.linalg.norm(b)==0):
+        return 0
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 def clean_code(code):
@@ -74,30 +76,29 @@ def bestContext(prompt,k=3):
     return [item for _, item in scored[:k]]
 
 def main():
-    max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])
-    context = bestContext(max.Description(), 3)
+    task_max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])
+    context = bestContext(task_max.Description(), 3)
 
     text=""
     for item in context:
         text=text+item['task']+"\n"+item['solution']+"\n"
 
-    prompt_without_rag = max.Prompt()
+    prompt_without_rag = task_max.Prompt()
     prompt_with_rag = prompt_without_rag + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
 
-    print(prompt_with_rag)
+    answer = askModel(prompt_with_rag)
 
-    # answer = askModel(prompt_with_rag)
+    with open("solution_with_rag.py","w",encoding="utf-8") as f:
+        f.write(answer)
 
-    # with open("solution_with_rag.py","w",encoding="utf-8") as f:
-    #     f.write(answer)
+    answer = askModel(prompt_without_rag)
 
-    # answer = askModel(prompt_without_rag)
+    with open("solution_without_rag.py","w",encoding="utf-8") as f:
+        f.write(answer)
 
-    # with open("solution_without_rag.py","w",encoding="utf-8") as f:
-    #     f.write(answer)
-
-    #print(run_solution("solution_without_rag.py",max.Tests(),max.Answer(),max.function_name))
-    #print(run_solution("solution_with_rag.py",max.Tests(),max.Answer(),max.function_name))
+    print("Statistics:\n")
+    print(f"""Solution without RAG: {run_solution("solution_without_rag.py",task_max.Tests(),task_max.Answer(),task_max.function_name)}""")
+    print(f"""Solution with RAG: {run_solution("solution_with_rag.py",task_max.Tests(),task_max.Answer(),task_max.function_name)}""")
 
 
 if (__name__=="__main__"):
