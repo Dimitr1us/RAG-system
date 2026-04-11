@@ -63,15 +63,18 @@ def getEmbedding(something):
 def bestContext(prompt,k=3):
     vectorPrompt = getEmbedding(prompt)
     scored = []
+    updated = False
     for item in data:
         if "embedding" not in item:
+            updated = True
             item["embedding"] = getEmbedding(item["task"])
         score = cosine_similarity(vectorPrompt, item["embedding"])
         scored.append((score, item))
     scored.sort(key=lambda x: x[0], reverse=True)
 
-    with open("context.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii= False,indent = 4)
+    if updated:
+        with open("context.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii= False,indent = 4)
 
     return [item for _, item in scored[:k]]
 
