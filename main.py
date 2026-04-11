@@ -27,17 +27,17 @@ def run_solution(file_path,test_input,answer_input, name_function):
         code = f.read()
 
     local_env = {}
-    exec(code,{},local_env)
+    try:
+        exec(code,{},local_env)
 
-    solve = local_env.get(name_function)
-
-    if not solve:
+        solve = local_env.get(name_function)
+        
+        k=0
+        for i in range(len(test_input)):
+            answer = solve(test_input[i])
+            k += (answer==answer_input[i])
+    except:
         raise Exception(f"""Function {name_function} not found.""")
-    
-    k=0
-    for i in range(len(test_input)):
-        answer = solve(test_input[i])
-        k += (answer==answer_input[i])
     
     return k/len(answer_input)
 
