@@ -78,15 +78,14 @@ def bestContext(prompt,k=3):
 
     return [item for _, item in scored[:k]]
 
-def main():
-    task_max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])
-    context = bestContext(task_max.Description(), 3)
+def Research(task):
+    context = bestContext(task.Description(), 3)
 
     text=""
     for item in context:
         text=text+item['task']+"\n"+item['solution']+"\n"
 
-    prompt_without_rag = task_max.Prompt()
+    prompt_without_rag = task.Prompt()
     prompt_with_rag = prompt_without_rag + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
 
     answer = askModel(prompt_with_rag)
@@ -100,9 +99,12 @@ def main():
         f.write(answer)
 
     print("Statistics:\n")
-    print(f"""Solution without RAG: {run_solution("solution_without_rag.py",task_max.Tests(),task_max.Answer(),task_max.function_name)}""")
-    print(f"""Solution with RAG: {run_solution("solution_with_rag.py",task_max.Tests(),task_max.Answer(),task_max.function_name)}""")
+    print(f"""Solution without RAG: {run_solution("solution_without_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
+    print(f"""Solution with RAG: {run_solution("solution_with_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
 
+def main():
+    task_max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])
+    Research(task_max)
 
 if (__name__=="__main__"):
     main()
