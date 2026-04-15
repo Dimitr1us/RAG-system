@@ -88,19 +88,19 @@ def Research(task):
     prompt_without_rag = task.Prompt()
     prompt_with_rag = prompt_without_rag + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
 
-    answer = askModel(prompt_with_rag)
+    # answer = askModel(prompt_with_rag)
 
-    with open("solution_with_rag.py","w",encoding="utf-8") as f:
-        f.write(answer)
+    # with open("solution_with_rag.py","w",encoding="utf-8") as f:
+    #     f.write(answer)
 
-    answer = askModel(prompt_without_rag)
+    # answer = askModel(prompt_without_rag)
 
-    with open("solution_without_rag.py","w",encoding="utf-8") as f:
-        f.write(answer)
+    # with open("solution_without_rag.py","w",encoding="utf-8") as f:
+    #     f.write(answer)
 
-    print("Statistics:\n")
-    print(f"""Solution without RAG: {run_solution("solution_without_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
-    print(f"""Solution with RAG: {run_solution("solution_with_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
+    # print("Statistics:\n")
+    # print(f"""Solution without RAG: {run_solution("solution_without_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
+    # print(f"""Solution with RAG: {run_solution("solution_with_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
 
 def main():
     task_max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])
