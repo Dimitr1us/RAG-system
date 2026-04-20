@@ -3,6 +3,9 @@ import numpy as np
 import json
 import os
 from Task import Task
+from logger import logger
+import time
+from datetime import datetime
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -79,6 +82,8 @@ def bestContext(prompt,k=3):
     return [item for _, item in scored[:k]]
 
 def Research(task):
+    start_time = time.time()
+
     context = bestContext(task.Description(), 3)
 
     text=""
@@ -88,19 +93,32 @@ def Research(task):
     prompt_without_rag = task.Prompt()
     prompt_with_rag = prompt_without_rag + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
 
-    # answer = askModel(prompt_with_rag)
+    answer = askModel(prompt_with_rag)
 
-    # with open("solution_with_rag.py","w",encoding="utf-8") as f:
-    #     f.write(answer)
+    with open("solution_with_rag.py","w",encoding="utf-8") as f:
+        f.write(answer)
 
-    # answer = askModel(prompt_without_rag)
+    answer = askModel(prompt_without_rag)
 
-    # with open("solution_without_rag.py","w",encoding="utf-8") as f:
-    #     f.write(answer)
+    with open("solution_without_rag.py","w",encoding="utf-8") as f:
+        f.write(answer)
 
-    # print("Statistics:\n")
-    # print(f"""Solution without RAG: {run_solution("solution_without_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
-    # print(f"""Solution with RAG: {run_solution("solution_with_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
+    print("Statistics:\n")
+    print(f"""Solution without RAG: {run_solution("solution_without_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
+    print(f"""Solution with RAG: {run_solution("solution_with_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
+
+    elapsed = time.time() - start_time
+
+    logger.info("Результаты решения",
+                extra={
+                    "task": task.Description(),
+                    "function_name": task.Function_Name(),
+                    "accuracy_without_rag": run_solution("solution_without_rag.py", task.Tests(), task.Answer(), task.function_name),
+                    "accuracy_with_rag": run_solution("solution_with_rag.py", task.Tests(), task.Answer(), task.function_name),
+                    "context_items": len(context),
+                    "elapsed_time": round(elapsed, 4),
+                    "timestamp": datetime.now().isoformat()
+                })
 
 def main():
     task_max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])

@@ -1,0 +1,1 @@
+{"timestamp": "2026-04-21T01:06:45.901719", "level": "INFO", "logger": "rag_experiment", "message": "Результаты решения", "task": "Напиши функцию, которая ищет максимальный элемент массива.", "function_name": "solve", "accuracy_without_rag": 1.0, "accuracy_with_rag": 1.0, "context_items": 3, "elapsed_time": 27.7474}
