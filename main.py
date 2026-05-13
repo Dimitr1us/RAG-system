@@ -8,53 +8,48 @@ import time
 from datetime import datetime
 
 API_KEY = os.getenv("GEMINI_API_KEY")
+if not API_KEY:
+    raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-client = genai.Client(api_key = API_KEY)
+client = genai.Client(api_key=API_KEY)
 
 with open("context.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
 def cosine_similarity(a, b):
-    if (np.linalg.norm(a)==0 or np.linalg.norm(b)==0):
+    if np.linalg.norm(a) == 0 or np.linalg.norm(b) == 0:
         return 0
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 def clean_code(code):
-    code = code.replace("```","")
-    code = code.replace("python","")
+    code = code.replace("```", "")
+    code = code.replace("python", "")
     code = code.strip()
     return code
 
-def run_solution(file_path,test_input,answer_input, name_function):
+def run_solution(file_path, test_input, answer_input, name_function):
     with open(file_path, "r", encoding="utf-8") as f:
         code = f.read()
-
     local_env = {}
     try:
-        exec(code,{},local_env)
-
+        exec(code, {}, local_env)
         solve = local_env.get(name_function)
-        
-        k=0
+        k = 0
         for i in range(len(test_input)):
             answer = solve(test_input[i])
-            k += (answer==answer_input[i])
-    except:
-        raise Exception(f"""Function {name_function} not found.""")
-    
-    return k/len(answer_input)
+            k += (answer == answer_input[i])
+        return k / len(answer_input)
+    except Exception:
+        return 0.0
 
-#делает запрос
 def askModel(something):
     response = client.models.generate_content(
-        model = "gemini-3-flash-preview",
-        contents = something
+        model="gemini-3-flash-preview",
+        contents=something
     )
     answer = response.candidates[0].content.parts[0].text
-    answer = clean_code(answer)
-    return answer
+    return clean_code(answer)
 
-#делает запрос
 def getEmbedding(something):
     context = client.models.embed_content(
         model="gemini-embedding-001",
@@ -62,8 +57,7 @@ def getEmbedding(something):
     )
     return context.embeddings[0].values
 
-#делает запрос
-def bestContext(prompt,k=3):
+def bestContext(prompt, k=3):
     vectorPrompt = getEmbedding(prompt)
     scored = []
     updated = False
@@ -74,55 +68,57 @@ def bestContext(prompt,k=3):
         score = cosine_similarity(vectorPrompt, item["embedding"])
         scored.append((score, item))
     scored.sort(key=lambda x: x[0], reverse=True)
-
     if updated:
         with open("context.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii= False,indent = 4)
-
+            json.dump(data, f, ensure_ascii=False, indent=4)
     return [item for _, item in scored[:k]]
 
 def Research(task):
     start_time = time.time()
-
     context = bestContext(task.Description(), 3)
-
-    text=""
+    text = ""
     for item in context:
-        text=text+item['task']+"\n"+item['solution']+"\n"
+        text += item['task'] + "\n" + item['solution'] + "\n"
 
-    prompt_without_rag = task.Prompt()
-    prompt_with_rag = prompt_without_rag + "Для лучшего решения задания учти во внимание также данный код:\n" + text + "Если решение полностью совпадает с контекстом, то всё равно отправь код назад."
+    prompt_without = task.Prompt()
+    prompt_with = prompt_without + "\nДля лучшего решения учти следующие примеры:\n" + text + "\nЕсли решение совпадает с контекстом — всё равно верни код."
 
-    answer = askModel(prompt_with_rag)
+    answer_rag = askModel(prompt_with)
+    with open("solution_with_rag.py", "w", encoding="utf-8") as f:
+        f.write(answer_rag)
 
-    with open("solution_with_rag.py","w",encoding="utf-8") as f:
-        f.write(answer)
+    answer_no_rag = askModel(prompt_without)
+    with open("solution_without_rag.py", "w", encoding="utf-8") as f:
+        f.write(answer_no_rag)
 
-    answer = askModel(prompt_without_rag)
-
-    with open("solution_without_rag.py","w",encoding="utf-8") as f:
-        f.write(answer)
-
-    print("Statistics:\n")
-    print(f"""Solution without RAG: {run_solution("solution_without_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
-    print(f"""Solution with RAG: {run_solution("solution_with_rag.py",task.Tests(),task.Answer(),task.function_name)}""")
+    acc_rag = run_solution("solution_with_rag.py", task.Tests(), task.Answer(), task.Function_Name())
+    acc_no = run_solution("solution_without_rag.py", task.Tests(), task.Answer(), task.Function_Name())
 
     elapsed = time.time() - start_time
 
-    logger.info("Результаты решения",
-                extra={
-                    "task": task.Description(),
-                    "function_name": task.Function_Name(),
-                    "accuracy_without_rag": run_solution("solution_without_rag.py", task.Tests(), task.Answer(), task.function_name),
-                    "accuracy_with_rag": run_solution("solution_with_rag.py", task.Tests(), task.Answer(), task.function_name),
-                    "context_items": len(context),
-                    "elapsed_time": round(elapsed, 4),
-                    "timestamp": datetime.now().isoformat()
-                })
+    print(f"Solution without RAG: {acc_no:.2f}")
+    print(f"Solution with RAG:    {acc_rag:.2f}")
+    print(f"Time: {elapsed:.1f} sec")
+
+    logger.info("Результаты решения", extra={
+        "task": task.Description(),
+        "function_name": task.Function_Name(),
+        "accuracy_without_rag": acc_no,
+        "accuracy_with_rag": acc_rag,
+        "context_items": len(context),
+        "elapsed_time": round(elapsed, 4),
+        "timestamp": datetime.now().isoformat()
+    })
 
 def main():
-    task_max = Task("Напиши функцию, которая ищет максимальный элемент массива.","solve",[[1,2,3],[1,2],[4,2,3,1]],[3,2,4])
-    Research(task_max)
+    tasks = [
+        Task("Напиши функцию, которая ищет максимальный элемент массива.", "solve", [[1,2,3],[1,2],[4,2,3,1]], [3,2,4]),
+        Task("Напиши функцию, которая возвращает сумму всех элементов списка.", "solve", [[1,2,3],[10,20],[0]], [6,30,0]),
+        # Добавь сюда ещё 4–6 задач разной сложности
+    ]
+    for t in tasks:
+        print(f"\n=== Задача: {t.Description()}")
+        Research(t)
 
-if (__name__=="__main__"):
+if __name__ == "__main__":
     main()

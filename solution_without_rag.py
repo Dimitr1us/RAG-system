@@ -1,2 +1,2 @@
-def solve(arr):
-    return max(arr)
+def solve(elements):
+    return sum(elements)
