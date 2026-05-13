@@ -64,7 +64,6 @@ def ask_model(prompt: str) -> str:
 
 
 def generate_with_rag(task_description: str):
-    """Основная функция для генерации с/без RAG"""
     start_time = time.time()
 
     context_items = best_context(task_description, 3)
