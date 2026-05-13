@@ -8,8 +8,8 @@ import time
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from src.Task import Task
-from src.logger import logger
+from Task import Task
+from logger import logger
 
 # ====================== Инициализация ======================
 API_KEY = os.getenv("GEMINI_API_KEY")
