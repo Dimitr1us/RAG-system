@@ -2,10 +2,14 @@ from google import genai
 import numpy as np
 import json
 import os
-from Task import Task
-from logger import logger
-import time
+import sys
 from datetime import datetime
+import time
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.Task import Task
+from src.logger import logger
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
@@ -13,7 +17,7 @@ if not API_KEY:
 
 client = genai.Client(api_key=API_KEY)
 
-with open("context.json", "r", encoding="utf-8") as f:
+with open("data/context.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
 def cosine_similarity(a, b):
@@ -38,7 +42,7 @@ def run_solution(file_path, test_input, answer_input, name_function):
         for i in range(len(test_input)):
             answer = solve(test_input[i])
             k += (answer == answer_input[i])
-        return k / len(answer_input)
+        return round(k / len(answer_input), 2)
     except Exception:
         return 0.0
 
@@ -69,7 +73,7 @@ def bestContext(prompt, k=3):
         scored.append((score, item))
     scored.sort(key=lambda x: x[0], reverse=True)
     if updated:
-        with open("context.json", "w", encoding="utf-8") as f:
+        with open("data/context.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
     return [item for _, item in scored[:k]]
 
@@ -78,21 +82,21 @@ def Research(task):
     context = bestContext(task.Description(), 3)
     text = ""
     for item in context:
-        text += item['task'] + "\n" + item['solution'] + "\n"
+        text += item['task'] + "\n" + item['solution'] + "\n\n"
 
     prompt_without = task.Prompt()
-    prompt_with = prompt_without + "\nДля лучшего решения учти следующие примеры:\n" + text + "\nЕсли решение совпадает с контекстом — всё равно верни код."
+    prompt_with = prompt_without + "\nДля лучшего решения учти следующие примеры:\n" + text + "\nЕсли решение совпадает с контекстом — всё равно верни только код функции."
 
     answer_rag = askModel(prompt_with)
-    with open("solution_with_rag.py", "w", encoding="utf-8") as f:
+    with open("solutions/solution_with_rag.py", "w", encoding="utf-8") as f:
         f.write(answer_rag)
 
     answer_no_rag = askModel(prompt_without)
-    with open("solution_without_rag.py", "w", encoding="utf-8") as f:
+    with open("solutions/solution_without_rag.py", "w", encoding="utf-8") as f:
         f.write(answer_no_rag)
 
-    acc_rag = run_solution("solution_with_rag.py", task.Tests(), task.Answer(), task.Function_Name())
-    acc_no = run_solution("solution_without_rag.py", task.Tests(), task.Answer(), task.Function_Name())
+    acc_rag = run_solution("solutions/solution_with_rag.py", task.Tests(), task.Answer(), task.Function_Name())
+    acc_no = run_solution("solutions/solution_without_rag.py", task.Tests(), task.Answer(), task.Function_Name())
 
     elapsed = time.time() - start_time
 
@@ -114,7 +118,7 @@ def main():
     tasks = [
         Task("Напиши функцию, которая ищет максимальный элемент массива.", "solve", [[1,2,3],[1,2],[4,2,3,1]], [3,2,4]),
         Task("Напиши функцию, которая возвращает сумму всех элементов списка.", "solve", [[1,2,3],[10,20],[0]], [6,30,0]),
-        # Добавь сюда ещё 4–6 задач разной сложности
+        Task("Напиши функцию, которая проверяет, является ли число простым.", "solve", [7,10,13,1], [True, False, True, False]),
     ]
     for t in tasks:
         print(f"\n=== Задача: {t.Description()}")
