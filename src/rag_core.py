@@ -4,7 +4,11 @@ import numpy as np
 import time
 from google import genai
 
+# ====================== Инициализация ======================
 API_KEY = os.getenv("GEMINI_API_KEY")
+if not API_KEY:
+    raise ValueError("GEMINI_API_KEY not found")
+
 client = genai.Client(api_key=API_KEY)
 
 DATA_PATH = "data/context.json"
@@ -63,7 +67,41 @@ def ask_model(prompt: str) -> str:
     return clean_code(response.candidates[0].content.parts[0].text)
 
 
-def generate_with_rag(task_description: str):
+def run_test(code: str, inputs: list, expecteds: list):
+    """Тестирует сгенерированный код"""
+    try:
+        local_env = {}
+        exec(code, {}, local_env)
+        
+        # Ищем функцию (предпочтительно solve)
+        func = local_env.get("solve")
+        if not func:
+            for name, obj in local_env.items():
+                if callable(obj) and not name.startswith("__"):
+                    func = obj
+                    break
+        
+        if not func:
+            return 0.0, "Не удалось найти функцию в коде"
+
+        correct = 0
+        for inp, exp in zip(inputs, expecteds):
+            try:
+                result = func(inp)
+                if result == exp:
+                    correct += 1
+            except Exception as e:
+                return 0.0, f"Ошибка выполнения: {e}"
+        
+        accuracy = correct / len(inputs)
+        return accuracy, None
+
+    except Exception as e:
+        return 0.0, f"Ошибка выполнения кода: {str(e)}"
+
+
+def generate_with_rag(task_description: str, test_inputs=None, expected_outputs=None):
+    """Основная функция: генерация + тестирование"""
     start_time = time.time()
 
     context_items = best_context(task_description, 3)
@@ -80,11 +118,21 @@ def generate_with_rag(task_description: str):
     code_rag = ask_model(prompt_with)
     code_no_rag = ask_model(prompt_without)
 
-    elapsed = time.time() - start_time
-
-    return {
+    result = {
         "code_rag": code_rag,
         "code_no_rag": code_no_rag,
-        "time": round(elapsed, 2),
+        "time": round(time.time() - start_time, 2),
         "context_items": len(context_items)
     }
+
+    # Тестирование, если переданы данные
+    if test_inputs and expected_outputs and len(test_inputs) == len(expected_outputs):
+        acc_rag, err_rag = run_test(code_rag, test_inputs, expected_outputs)
+        acc_no, err_no = run_test(code_no_rag, test_inputs, expected_outputs)
+        
+        result["accuracy_rag"] = acc_rag
+        result["accuracy_no_rag"] = acc_no
+        result["error_rag"] = err_rag
+        result["error_no_rag"] = err_no
+
+    return result
