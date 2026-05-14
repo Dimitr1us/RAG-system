@@ -28,7 +28,7 @@ tab1, tab2 = st.tabs(["🚀 Тестирование", "📚 База знани
 with tab1:
     st.subheader("Описание задачи")
     user_input = st.text_area(
-        "", 
+        "Введите описание задачи", 
         height=100,
         placeholder="Напиши функцию, которая проверяет, является ли число простым...",
         label_visibility="collapsed"
