@@ -7,31 +7,48 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from src.rag_core import generate_with_rag
 
-st.set_page_config(page_title="RAG vs No-RAG", layout="wide")
-st.title("🔍 Сравнение RAG и обычной генерации кода с Gemini")
+st.set_page_config(
+    page_title="RAG vs No-RAG",
+    page_icon="🔍",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+st.title("🔍 RAG vs No-RAG — Генерация кода с Gemini")
+st.markdown("**Курсовая работа** • Сравнение эффективности Retrieval-Augmented Generation")
+
+with st.sidebar:
+    st.header("О проекте")
+    st.info("Система сравнивает генерацию кода **с RAG** и **без RAG** на модели Gemini.")
+    st.caption("Модель: gemini-3-flash-preview")
 
 tab1, tab2 = st.tabs(["🚀 Тестирование", "📊 История"])
 
 with tab1:
     st.subheader("Описание задачи")
-    user_input = st.text_area("Напишите задачу:", height=110, 
-                              placeholder="Напиши функцию, которая ищет максимальный элемент в списке...")
+    user_input = st.text_area(
+        "", 
+        height=100,
+        placeholder="Напиши функцию, которая проверяет, является ли число простым...",
+        label_visibility="collapsed"
+    )
 
     col1, col2 = st.columns(2)
+    
     with col1:
         st.subheader("Тестовые входные данные")
         test_input_str = st.text_area(
             "Каждая строка — один тест", 
-            height=150, 
-            placeholder="1,2,3\n4,5,6,7\n[10,20]\nhello"
+            height=160,
+            placeholder="1,2,3\n[4,5,6]\nhello world\n10"
         )
     
     with col2:
         st.subheader("Ожидаемые результаты")
         expected_str = st.text_area(
             "Каждая строка — один результат", 
-            height=150,
-            placeholder="3\n7\n20\nhello"
+            height=160,
+            placeholder="3\n[6]\nhello world\nFalse"
         )
 
     if st.button("🚀 Запустить сравнение RAG vs Без RAG", type="primary", use_container_width=True):
@@ -39,95 +56,69 @@ with tab1:
             st.warning("Введите описание задачи")
             st.stop()
 
-        # ==================== Новый парсинг ====================
         def parse_test_line(line: str):
             line = line.strip()
             if not line:
                 return None
             try:
-                # Если уже валидный Python литерал — используем как есть
                 return ast.literal_eval(line)
             except:
-                # Если это просто числа/строки через запятую — оборачиваем в список
                 if ',' in line:
                     try:
-                        # Пробуем распарсить как список
-                        items = [ast.literal_eval(x.strip()) if x.strip() else x.strip() 
-                                for x in line.split(',')]
-                        return items
+                        return [ast.literal_eval(x.strip()) if x.strip() else x.strip() 
+                               for x in line.split(',')]
                     except:
-                        return line  # если не получилось — оставляем строку
-                return line  # обычная строка
+                        return line
+                return line
 
-        # Разбиваем по строкам
-        inputs = []
-        expecteds = []
+        inputs = [parse_test_line(line) for line in test_input_str.split('\n') if parse_test_line(line) is not None]
+        expecteds = [parse_test_line(line) for line in expected_str.split('\n') if parse_test_line(line) is not None]
 
-        for line in test_input_str.split('\n'):
-            parsed = parse_test_line(line)
-            if parsed is not None:
-                inputs.append(parsed)
-
-        for line in expected_str.split('\n'):
-            parsed = parse_test_line(line)
-            if parsed is not None:
-                expecteds.append(parsed)
-
-        # Проверки
         if len(inputs) == 0:
-            st.error("Введите хотя бы один тестовый пример")
+            st.error("Введите тестовые данные")
             st.stop()
-
         if len(inputs) != len(expecteds):
-            st.error(f"Количество строк не совпадает!\nВходных данных: {len(inputs)}, Ожидаемых результатов: {len(expecteds)}")
+            st.error(f"Количество тестов не совпадает: {len(inputs)} входных vs {len(expecteds)} результатов")
             st.stop()
 
-        # ==================== Запуск ====================
-        with st.spinner("Генерация и тестирование..."):
+        with st.spinner("Генерация решений и тестирование..."):
             result = generate_with_rag(user_input, inputs, expecteds)
 
-            st.success(f"Готово за {result['time']} сек")
+            st.success(f"Готово за {result['time']} секунд • Примеров из базы: {result.get('context_items', 0)}")
 
-            col_a, col_b = st.columns(2)
-            with col_a:
+            c1, c2 = st.columns(2)
+            with c1:
                 st.subheader("✅ С RAG")
                 st.code(result["code_rag"], language="python")
                 if "accuracy_rag" in result:
                     if result.get("error_rag"):
                         st.error(result["error_rag"])
                     else:
-                        st.success(f"Точность: **{result['accuracy_rag']:.1%}**")
+                        st.metric("Точность (RAG)", f"{result['accuracy_rag']:.1%}")
 
-            with col_b:
+            with c2:
                 st.subheader("⚪️ Без RAG")
                 st.code(result["code_no_rag"], language="python")
                 if "accuracy_no_rag" in result:
                     if result.get("error_no_rag"):
                         st.error(result["error_no_rag"])
                     else:
-                        st.success(f"Точность: **{result['accuracy_no_rag']:.1%}**")
+                        st.metric("Точность (No RAG)", f"{result['accuracy_no_rag']:.1%}")
 
-            # Подробные результаты
             if result.get("test_details_rag"):
                 st.subheader("📋 Подробные результаты тестов")
                 for det_rag, det_no in zip(result["test_details_rag"], result["test_details_no"]):
-                    with st.expander(f"Тест {det_rag['test_num']}: Input = {det_rag['input']}"):
-                        c1, c2 = st.columns(2)
-                        with c1:
+                    with st.expander(f"Тест {det_rag['test_num']}: {det_rag['input']}"):
+                        col_r, col_n = st.columns(2)
+                        with col_r:
                             st.markdown("**С RAG**")
                             st.write(f"Ожидалось: `{det_rag['expected']}`")
                             st.write(f"Получено: `{det_rag['actual']}`")
-                            if det_rag['correct']:
-                                st.success("Правильно")
-                            else:
-                                st.error("Неправильно")
-                        with c2:
+                            st.success("Правильно") if det_rag['correct'] else st.error("Неправильно")
+                        with col_n:
                             st.markdown("**Без RAG**")
                             st.write(f"Ожидалось: `{det_no['expected']}`")
                             st.write(f"Получено: `{det_no['actual']}`")
-                            if det_no['correct']:
-                                st.success("Правильно")
-                            else:
-                                st.error("Неправильно")
+                            st.success("Правильно") if det_no['correct'] else st.error("Неправильно")
 
-st.caption("Курсовая работа • RAG-system")
+st.caption("Курсовая работа • RAG-system • 2026")
