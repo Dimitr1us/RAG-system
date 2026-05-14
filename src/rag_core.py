@@ -62,6 +62,39 @@ def ask_model(prompt: str) -> str:
     return clean_code(response.candidates[0].content.parts[0].text)
 
 
+def save_to_context(task_description: str, solution_code: str, similarity_threshold: float = 0.85):
+    try:
+        with open(DATA_PATH, "r", encoding="utf-8") as f:
+            context = json.load(f)
+        
+        new_embedding = get_embedding(task_description)
+        
+        for item in context:
+            if "embedding" not in item or item["embedding"] is None:
+                item["embedding"] = get_embedding(item["task"])
+            
+            similarity = cosine_similarity(new_embedding, item["embedding"])
+            
+            if similarity > similarity_threshold:
+                return False, f"Слишком похожая задача уже есть (схожесть: {similarity:.3f})"
+        
+        new_item = {
+            "task": task_description,
+            "solution": solution_code,
+            "embedding": new_embedding.tolist() 
+        }
+        
+        context.append(new_item)
+        
+        with open(DATA_PATH, "w", encoding="utf-8") as f:
+            json.dump(context, f, ensure_ascii=False, indent=4)
+        
+        return True, "Задача успешно добавлена в базу знаний"
+        
+    except Exception as e:
+        return False, f"Ошибка сохранения: {e}"
+
+
 def run_test(code: str, inputs: list, expecteds: list):
     """Тестирует код и возвращает детальную информацию"""
     try:

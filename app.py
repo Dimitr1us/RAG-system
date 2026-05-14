@@ -7,6 +7,7 @@ import json
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from src.rag_core import generate_with_rag
+from src.rag_core import save_to_context
 
 st.set_page_config(
     page_title="RAG vs No-RAG",
@@ -106,7 +107,13 @@ with tab1:
                     else:
                         st.metric("Точность (No RAG)", f"{result['accuracy_no_rag']:.1%}")
 
-                        # Подробные результаты тестов
+            if st.button("💾 Сохранить задачу + решение (RAG) в базу знаний", type="secondary", use_container_width=True):
+                success, message = save_to_context(user_input, result["code_rag"])
+                if success:
+                    st.success(message)
+                else:
+                    st.warning(message)
+
             if result.get("test_details_rag"):
                 st.subheader("📋 Подробные результаты тестов")
                 
