@@ -63,10 +63,12 @@ def ask_model(prompt: str) -> str:
 
 
 def save_to_context(task_description: str, solution_code: str, similarity_threshold: float = 0.85):
+    """Сохраняет новую задачу в базу с семантической проверкой дубликатов"""
     try:
         with open(DATA_PATH, "r", encoding="utf-8") as f:
             context = json.load(f)
         
+        # Получаем эмбеддинг новой задачи
         new_embedding = get_embedding(task_description)
         
         for item in context:
@@ -76,12 +78,12 @@ def save_to_context(task_description: str, solution_code: str, similarity_thresh
             similarity = cosine_similarity(new_embedding, item["embedding"])
             
             if similarity > similarity_threshold:
-                return False, f"Слишком похожая задача уже есть (схожесть: {similarity:.3f})"
+                return False, f"Слишком похожая задача уже существует (схожесть: {similarity:.3f})"
         
         new_item = {
             "task": task_description,
             "solution": solution_code,
-            "embedding": new_embedding.tolist() 
+            "embedding": new_embedding.tolist()
         }
         
         context.append(new_item)
@@ -92,7 +94,7 @@ def save_to_context(task_description: str, solution_code: str, similarity_thresh
         return True, "Задача успешно добавлена в базу знаний"
         
     except Exception as e:
-        return False, f"Ошибка сохранения: {e}"
+        return False, f"Ошибка сохранения: {str(e)}"
 
 
 def run_test(code: str, inputs: list, expecteds: list):

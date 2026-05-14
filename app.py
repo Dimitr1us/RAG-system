@@ -6,8 +6,7 @@ import json
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from src.rag_core import generate_with_rag
-from src.rag_core import save_to_context
+from src.rag_core import generate_with_rag, save_to_context
 
 st.set_page_config(
     page_title="RAG vs No-RAG",
