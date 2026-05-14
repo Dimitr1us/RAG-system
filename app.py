@@ -2,6 +2,7 @@ import streamlit as st
 import sys
 import os
 import ast
+import json
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -22,7 +23,7 @@ with st.sidebar:
     st.info("Система сравнивает генерацию кода **с RAG** и **без RAG** на модели Gemini.")
     st.caption("Модель: gemini-3-flash-preview")
 
-tab1, tab2 = st.tabs(["🚀 Тестирование", "📊 История"])
+tab1, tab2 = st.tabs(["🚀 Тестирование", "📚 База знаний"])
 
 with tab1:
     st.subheader("Описание задачи")
@@ -130,5 +131,25 @@ with tab1:
                                 st.success("Правильно")
                             else:
                                 st.error("Неправильно")
+
+
+with tab2:
+    st.subheader("📚 База знаний (context.json)")
+    
+    try:
+        with open("data/context.json", "r", encoding="utf-8") as f:
+            context_data = json.load(f)
+        
+        st.info(f"Всего задач в базе: **{len(context_data)}**")
+        
+        for i, item in enumerate(context_data, 1):
+            with st.expander(f"{i}. {item.get('task', 'Без названия')[:80]}..."):
+                st.markdown("**Задача:**")
+                st.write(item.get('task', '—'))
+                st.markdown("**Решение:**")
+                st.code(item.get('solution', '—'), language="python")
+                
+    except Exception as e:
+        st.error(f"Не удалось загрузить базу знаний: {e}")
 
 st.caption("Курсовая работа • RAG-system • 2026")
