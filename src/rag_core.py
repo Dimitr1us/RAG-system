@@ -4,7 +4,6 @@ import numpy as np
 import time
 from google import genai
 
-# ====================== Инициализация ======================
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY not found")
@@ -42,20 +41,16 @@ def best_context(prompt: str, k: int = 3):
     vector_prompt = get_embedding(prompt)
     scored = []
     updated = False
-
     for item in data:
         if "embedding" not in item:
             updated = True
             item["embedding"] = get_embedding(item["task"])
         score = cosine_similarity(vector_prompt, item["embedding"])
         scored.append((score, item))
-
     scored.sort(key=lambda x: x[0], reverse=True)
-
     if updated:
         with open(DATA_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-
     return [item for _, item in scored[:k]]
 
 
@@ -68,21 +63,19 @@ def ask_model(prompt: str) -> str:
 
 
 def run_test(code: str, inputs: list, expecteds: list):
-    """Тестирует сгенерированный код"""
     try:
         local_env = {}
         exec(code, {}, local_env)
         
-        # Ищем функцию (предпочтительно solve)
         func = local_env.get("solve")
         if not func:
             for name, obj in local_env.items():
                 if callable(obj) and not name.startswith("__"):
                     func = obj
                     break
-        
+                    
         if not func:
-            return 0.0, "Не удалось найти функцию в коде"
+            return 0.0, "Не удалось найти функцию"
 
         correct = 0
         for inp, exp in zip(inputs, expecteds):
@@ -90,29 +83,23 @@ def run_test(code: str, inputs: list, expecteds: list):
                 result = func(inp)
                 if result == exp:
                     correct += 1
-            except Exception as e:
-                return 0.0, f"Ошибка выполнения: {e}"
+            except:
+                return 0.0, "Ошибка при выполнении функции"
         
-        accuracy = correct / len(inputs)
-        return accuracy, None
+        return correct / len(inputs), None
 
     except Exception as e:
-        return 0.0, f"Ошибка выполнения кода: {str(e)}"
+        return 0.0, f"Ошибка выполнения: {str(e)}"
 
 
 def generate_with_rag(task_description: str, test_inputs=None, expected_outputs=None):
-    """Основная функция: генерация + тестирование"""
     start_time = time.time()
 
     context_items = best_context(task_description, 3)
-    examples = "\n\n".join([
-        f"Пример задачи:\n{item['task']}\nРешение:\n{item['solution']}" 
-        for item in context_items
-    ])
+    examples = "\n\n".join([f"Пример:\n{item['task']}\nРешение:\n{item['solution']}" for item in context_items])
 
     prompt_base = f"Напиши функцию на Python: {task_description}"
-    
-    prompt_with = prompt_base + "\n\nУчти следующие примеры и реши аналогично:\n" + examples + "\n\nВерни только чистый код функции."
+    prompt_with = prompt_base + "\n\nУчти примеры:\n" + examples + "\n\nВерни только чистый код функции."
     prompt_without = prompt_base + "\n\nВерни только чистый код функции."
 
     code_rag = ask_model(prompt_with)
@@ -125,7 +112,6 @@ def generate_with_rag(task_description: str, test_inputs=None, expected_outputs=
         "context_items": len(context_items)
     }
 
-    # Тестирование, если переданы данные
     if test_inputs and expected_outputs and len(test_inputs) == len(expected_outputs):
         acc_rag, err_rag = run_test(code_rag, test_inputs, expected_outputs)
         acc_no, err_no = run_test(code_no_rag, test_inputs, expected_outputs)
