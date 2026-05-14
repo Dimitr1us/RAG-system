@@ -63,6 +63,7 @@ def ask_model(prompt: str) -> str:
 
 
 def run_test(code: str, inputs: list, expecteds: list):
+    """Тестирует код и возвращает детальную информацию"""
     try:
         local_env = {}
         exec(code, {}, local_env)
@@ -75,21 +76,40 @@ def run_test(code: str, inputs: list, expecteds: list):
                     break
                     
         if not func:
-            return 0.0, "Не удалось найти функцию"
+            return 0.0, "Не удалось найти функцию", None
 
+        results = []
         correct = 0
-        for inp, exp in zip(inputs, expecteds):
+        
+        for i, (inp, exp) in enumerate(zip(inputs, expecteds)):
             try:
                 result = func(inp)
-                if result == exp:
+                is_correct = result == exp
+                if is_correct:
                     correct += 1
-            except:
-                return 0.0, "Ошибка при выполнении функции"
+                
+                results.append({
+                    "test_num": i + 1,
+                    "input": inp,
+                    "expected": exp,
+                    "actual": result,
+                    "correct": is_correct
+                })
+            except Exception as e:
+                results.append({
+                    "test_num": i + 1,
+                    "input": inp,
+                    "expected": exp,
+                    "actual": f"ERROR: {e}",
+                    "correct": False
+                })
+                return 0.0, f"Ошибка на тесте {i+1}", results
         
-        return correct / len(inputs), None
+        accuracy = correct / len(inputs) if inputs else 0.0
+        return accuracy, None, results
 
     except Exception as e:
-        return 0.0, f"Ошибка выполнения: {str(e)}"
+        return 0.0, f"Ошибка выполнения кода: {str(e)}", None
 
 
 def generate_with_rag(task_description: str, test_inputs=None, expected_outputs=None):
@@ -113,12 +133,14 @@ def generate_with_rag(task_description: str, test_inputs=None, expected_outputs=
     }
 
     if test_inputs and expected_outputs and len(test_inputs) == len(expected_outputs):
-        acc_rag, err_rag = run_test(code_rag, test_inputs, expected_outputs)
-        acc_no, err_no = run_test(code_no_rag, test_inputs, expected_outputs)
+        acc_rag, err_rag, details_rag = run_test(code_rag, test_inputs, expected_outputs)
+        acc_no, err_no, details_no = run_test(code_no_rag, test_inputs, expected_outputs)
         
         result["accuracy_rag"] = acc_rag
         result["accuracy_no_rag"] = acc_no
         result["error_rag"] = err_rag
         result["error_no_rag"] = err_no
+        result["test_details_rag"] = details_rag
+        result["test_details_no"] = details_no
 
     return result

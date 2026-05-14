@@ -52,6 +52,7 @@ with tab1:
 
             st.success(f"Готово за {result['time']} сек")
 
+            # Показ кода
             col_a, col_b = st.columns(2)
             with col_a:
                 st.subheader("✅ С RAG")
@@ -70,5 +71,23 @@ with tab1:
                         st.error(result["error_no_rag"])
                     else:
                         st.success(f"Точность: **{result['accuracy_no_rag']:.1%}**")
+
+            # === Подробные результаты тестов ===
+            if "test_details_rag" in result and result["test_details_rag"]:
+                st.subheader("📋 Подробные результаты выполнения")
+                
+                for i, (det_rag, det_no) in enumerate(zip(result["test_details_rag"], result["test_details_no"])):
+                    with st.expander(f"Тест {det_rag['test_num']}: Input = {det_rag['input']}"):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.write("**С RAG**")
+                            st.write(f"Ожидалось: `{det_rag['expected']}`")
+                            st.write(f"Получено: `{det_rag['actual']}`")
+                            st.write("✅ Правильно" if det_rag['correct'] else "❌ Неправильно")
+                        with col2:
+                            st.write("**Без RAG**")
+                            st.write(f"Ожидалось: `{det_no['expected']}`")
+                            st.write(f"Получено: `{det_no['actual']}`")
+                            st.write("✅ Правильно" if det_no['correct'] else "❌ Неправильно")
 
 st.caption("Курсовая работа • RAG-system")
