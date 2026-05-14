@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.title("🔍 RAG vs No-RAG — Генерация кода с Gemini")
+st.title("🔍 RAG vs No-RAG — Генерация кода на Python с Gemini")
 st.markdown("**Курсовая работа** • Сравнение эффективности Retrieval-Augmented Generation")
 
 with st.sidebar:
@@ -51,7 +51,7 @@ with tab1:
             placeholder="3\n[6]\nhello world\nFalse"
         )
 
-    if st.button("🚀 Запустить сравнение RAG vs Без RAG", type="primary", use_container_width=True):
+    if st.button("Запустить сравнение RAG vs Без RAG", type="primary", use_container_width=True):
         if not user_input.strip():
             st.warning("Введите описание задачи")
             st.stop()
@@ -105,20 +105,30 @@ with tab1:
                     else:
                         st.metric("Точность (No RAG)", f"{result['accuracy_no_rag']:.1%}")
 
+                        # Подробные результаты тестов
             if result.get("test_details_rag"):
                 st.subheader("📋 Подробные результаты тестов")
+                
                 for det_rag, det_no in zip(result["test_details_rag"], result["test_details_no"]):
                     with st.expander(f"Тест {det_rag['test_num']}: {det_rag['input']}"):
                         col_r, col_n = st.columns(2)
+                        
                         with col_r:
                             st.markdown("**С RAG**")
                             st.write(f"Ожидалось: `{det_rag['expected']}`")
                             st.write(f"Получено: `{det_rag['actual']}`")
-                            st.success("Правильно") if det_rag['correct'] else st.error("Неправильно")
+                            if det_rag['correct']:
+                                st.success("Правильно")
+                            else:
+                                st.error("Неправильно")
+                        
                         with col_n:
                             st.markdown("**Без RAG**")
                             st.write(f"Ожидалось: `{det_no['expected']}`")
                             st.write(f"Получено: `{det_no['actual']}`")
-                            st.success("Правильно") if det_no['correct'] else st.error("Неправильно")
+                            if det_no['correct']:
+                                st.success("Правильно")
+                            else:
+                                st.error("Неправильно")
 
 st.caption("Курсовая работа • RAG-system • 2026")
