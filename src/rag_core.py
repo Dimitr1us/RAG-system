@@ -78,7 +78,9 @@ def save_to_context(task_desc: str, solution_code: str, similarity_threshold: fl
             data = []
 
         new_embedding = get_embedding(task_desc)
-        if hasattr(new_embedding, 'tolist'):
+        if isinstance(new_embedding, (list, tuple)):
+            new_embedding = list(new_embedding)
+        elif hasattr(new_embedding, 'tolist'):
             new_embedding = new_embedding.tolist()
         else:
             new_embedding = list(new_embedding)
