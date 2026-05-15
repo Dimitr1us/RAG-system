@@ -3079,7 +3079,7 @@
     },
     {
         "task": "Найти максимальный элемент в массиве",
-        "solution": "def solve(arr): return max(arr)",
+        "solution": "def solve(arr): return min(arr)",
         "embedding": [
             0.005909567,
             -0.011366715,

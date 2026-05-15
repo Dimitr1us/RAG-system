@@ -62,37 +62,59 @@ def ask_model(prompt: str) -> str:
     return clean_code(response.candidates[0].content.parts[0].text)
 
 
-def save_to_context(task_description: str, solution_code: str, similarity_threshold: float = 0.85):
+def save_to_context(task_desc: str, solution_code: str, similarity_threshold: float = 0.85):
     try:
-        with open(DATA_PATH, "r", encoding="utf-8") as f:
-            context = json.load(f)
-        
-        new_embedding = get_embedding(task_description)
-        
-        for item in context:
-            if "embedding" not in item or item["embedding"] is None:
-                item["embedding"] = get_embedding(item["task"])
-            
-            similarity = cosine_similarity(new_embedding, item["embedding"])
-            
-            if similarity > similarity_threshold:
-                return False, f"Слишком похожая задача уже существует (схожесть: {similarity:.3f})"
-        
-        new_item = {
-            "task": task_description,
-            "solution": solution_code,
-            "embedding": new_embedding.tolist()
+        import json
+        import os
+        from datetime import datetime
+
+        path = "data/context.json"
+        os.makedirs("data", exist_ok=True)
+
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        else:
+            data = []
+
+        new_embedding = get_embedding(task_desc)
+        if hasattr(new_embedding, 'tolist'):
+            new_embedding = new_embedding.tolist()
+        else:
+            new_embedding = list(new_embedding)
+
+        max_similarity = 0.0
+        similar_task = None
+
+        for item in data:
+            if "embedding" in item:
+                existing_emb = item["embedding"]
+                similarity = cosine_similarity(new_embedding, existing_emb)
+                if similarity > max_similarity:
+                    max_similarity = similarity
+                    similar_task = item.get("task", "")[:100]
+
+        if max_similarity > similarity_threshold:
+            return False, (f"Задача слишком похожа на уже существующую "
+                          f"(сходство: {max_similarity:.3f}).\n"
+                          f"Похожая задача: {similar_task}...")
+
+        new_entry = {
+            "task": task_desc.strip(),
+            "solution": solution_code.strip(),
+            "embedding": new_embedding
         }
-        
-        context.append(new_item)
-        
-        with open(DATA_PATH, "w", encoding="utf-8") as f:
-            json.dump(context, f, ensure_ascii=False, indent=4)
-        
-        return True, "Задача успешно добавлена в базу знаний"
-        
+
+        data.append(new_entry)
+
+        # Сохраняем
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+        return True, f"✅ Задача успешно добавлена! (Сходство с ближайшей: {max_similarity:.3f})"
+
     except Exception as e:
-        return False, f"Ошибка сохранения: {str(e)}"
+        return False, f"Ошибка при сохранении: {str(e)}"
 
 
 def run_test(code: str, inputs: list, expecteds: list):
