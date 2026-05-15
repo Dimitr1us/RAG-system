@@ -63,12 +63,10 @@ def ask_model(prompt: str) -> str:
 
 
 def save_to_context(task_description: str, solution_code: str, similarity_threshold: float = 0.85):
-    """Сохраняет новую задачу в базу с семантической проверкой дубликатов"""
     try:
         with open(DATA_PATH, "r", encoding="utf-8") as f:
             context = json.load(f)
         
-        # Получаем эмбеддинг новой задачи
         new_embedding = get_embedding(task_description)
         
         for item in context:
@@ -98,7 +96,6 @@ def save_to_context(task_description: str, solution_code: str, similarity_thresh
 
 
 def run_test(code: str, inputs: list, expecteds: list):
-    """Тестирует код и возвращает детальную информацию"""
     try:
         local_env = {}
         exec(code, {}, local_env)
