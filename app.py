@@ -29,7 +29,6 @@ with st.sidebar:
 
 tab1, tab2 = st.tabs(["🚀 Тестирование", "📚 База знаний"])
 
-# ====================== TAB 1: Тестирование ======================
 with tab1:
     st.subheader("Описание задачи")
     user_input = st.text_area(
@@ -105,18 +104,26 @@ with tab1:
                 if result.get("test_details_rag"):
                     st.subheader("📋 Подробные результаты тестов")
                     for det_rag, det_no in zip(result["test_details_rag"], result["test_details_no"]):
-                        with st.expander(f"Тест {det_rag['test_num']}: {det_rag['input']}"):
+                        with st.expander(f"Тест {det_rag['test_num']}: {det_rag.get('input', '')}"):
                             col_r, col_n = st.columns(2)
+                            
                             with col_r:
                                 st.markdown("**С RAG**")
                                 st.write(f"Ожидалось: `{det_rag['expected']}`")
                                 st.write(f"Получено: `{det_rag['actual']}`")
-                                st.success("Правильно") if det_rag['correct'] else st.error("Неправильно")
+                                if det_rag.get('correct'):
+                                    st.success("✅ Правильно")
+                                else:
+                                    st.error("❌ Неправильно")
+
                             with col_n:
                                 st.markdown("**Без RAG**")
                                 st.write(f"Ожидалось: `{det_no['expected']}`")
                                 st.write(f"Получено: `{det_no['actual']}`")
-                                st.success("Правильно") if det_no['correct'] else st.error("Неправильно")
+                                if det_no.get('correct'):
+                                    st.success("✅ Правильно")
+                                else:
+                                    st.error("❌ Неправильно")
 
             except Exception as e:
                 status.update(label="❌ Ошибка", state="error")
