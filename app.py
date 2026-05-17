@@ -44,7 +44,7 @@ with tab1:
         test_input_str = st.text_area(
             "Каждая строка — один тест", 
             height=160,
-            placeholder="[[1,2,3]]\n[[1,2]]\n[[4,2,3,1]]"
+            placeholder="1,2,3\n1,2\n4,2,3,1"
         )
     with col2:
         st.subheader("Ожидаемые результаты")
@@ -122,7 +122,6 @@ with tab1:
                 status.update(label="❌ Ошибка", state="error")
                 st.error(f"Ошибка: {e}")
 
-# ====================== TAB 2: База знаний ======================
 with tab2:
     st.subheader("➕ Добавить новую запись в базу знаний")
 
