@@ -109,7 +109,6 @@ def save_to_context(task_desc: str, solution_code: str, similarity_threshold: fl
 
         data.append(new_entry)
 
-        # Сохраняем
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
@@ -171,15 +170,42 @@ def run_test(code: str, inputs: list, expecteds: list):
 def generate_with_rag(task_description: str, test_inputs=None, expected_outputs=None):
     start_time = time.time()
 
-    context_items = best_context(task_description, 3)
-    examples = "\n\n".join([f"Пример:\n{item['task']}\nРешение:\n{item['solution']}" for item in context_items])
+    context_items = best_context(task_description, k=3)
+    
+    examples_text = "\n\n".join([
+        f"Пример {i+1}:\nЗадача: {item['task'].strip()}\nРешение:\n{item['solution'].strip()}" 
+        for i, item in enumerate(context_items)
+    ])
 
-    prompt_base = f"Напиши функцию на Python: {task_description}"
-    prompt_with = prompt_base + "\n\nУчти примеры:\n" + examples + "\n\nВерни только чистый код функции."
-    prompt_without = prompt_base + "\n\nВерни только чистый код функции."
+    # === Улучшенный system prompt ===
+    system_instruction = """Ты — сильный Python-разработчик и алгоритмист. 
+    Напиши корректную, чистую и эффективную функцию по описанию задачи.
+    - Всегда называй функцию `solve`, если явно не указано другое.
+    - Возвращай **только код** функции без markdown, без объяснений.
+    - Можно импортировать модули внутри функции при необходимости."""
 
-    code_rag = ask_model(prompt_with)
-    code_no_rag = ask_model(prompt_without)
+    # Промпт с RAG
+    prompt_rag = f"""{system_instruction}
+
+    Примеры похожих задач:
+
+    {examples_text}
+
+    Задача:
+    {task_description}
+
+    Решение:"""
+
+    prompt_no_rag = f"""{system_instruction}
+
+    Задача:
+    {task_description}
+
+    Решение:"""
+
+    code_rag = ask_model(prompt_rag)
+    code_no_rag = ask_model(prompt_no_rag)
+    
 
     result = {
         "code_rag": code_rag,
